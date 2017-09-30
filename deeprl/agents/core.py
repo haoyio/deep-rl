@@ -102,6 +102,13 @@ class Agent(object):
                 episode_reward = None
                 episode_step = None
 
+                if verbose:
+                    print("episode={}/{}: episode_reward={}".format(
+                        episode,
+                        n_episodes,
+                        history['episode_rewards'][-1]
+                    ))
+
         except KeyboardInterrupt:
             # catch keyboard interrupts to safely abort training
             self.logger.warning("Agent training has been manually aborted.")
@@ -110,12 +117,11 @@ class Agent(object):
         history['total_time_sec'] = timeit.default_timer() - start_time
         history['is_aborted'] = is_aborted
 
-        self.logger.info(
-            "Agent training completed in {} sec{}.".format(
+        if verbose:
+            print("Agent training completed in {} sec{}.".format(
                 history.get('total_time_sec'),
                 " (aborted)" if is_aborted else ""
-            )
-        )
+            ))
 
         return history
 
