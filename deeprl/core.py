@@ -6,9 +6,9 @@ import timeit
 class Agent(object):
     """Abstract base class for all implemented agents.
 
-    Each agent interacts with the environment (as defined by OpenAI Gym) by
-    first observing the state of the environment. Based on this observation the
-    agent changes the environment by performing an action.
+    Each agent interacts with the environment (as defined by the `Env` class)
+    by first observing the state of the environment. Based on this observation
+    the agent changes the environment by performing an action.
     """
     def __init__(self, processor=None):
         self.logger = logging.getLogger(__name__)
