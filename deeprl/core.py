@@ -196,12 +196,6 @@ class Agent(object):
 
         return history
 
-    def remember(self, observation, action, reward, next_observation, done):
-        raise NotImplementedError()
-
-    def reset_memory(self):
-        raise NotImplementedError()
-
     def act(self, observation, is_train=False):
         """Given the env observation, return the action to be taken."""
         raise NotImplementedError()
