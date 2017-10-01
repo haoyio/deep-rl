@@ -1,6 +1,7 @@
 import logging
-import numpy as np
 import timeit
+
+from copy import deepcopy
 
 
 class Agent(object):
@@ -68,13 +69,11 @@ class Agent(object):
                         observation = deepcopy(observation)
 
                         if self.processor is not None:
-                            observation, reward, done, info = \
-                                self.processor.process_step(
-                                    observation,
-                                    reward,
-                                    done,
-                                    info
-                                )
+                            observation = self.processor.process_observation(
+                                observation
+                            )
+                            reward = self.processor.process_reward(reward)
+                            info = self.processor.process_info(info)
 
                         episode_step_reward += reward
 
@@ -146,7 +145,9 @@ class Agent(object):
                                         self.processor.process_observation(
                                             sim_observation
                                         )
-                                    sim_reward = self.process_reward(sim_reward)
+                                    sim_reward = self.processor.process_reward(
+                                        sim_reward
+                                    )
 
                                 sim_episode_step_reward += sim_reward
 
@@ -196,6 +197,9 @@ class Agent(object):
 
         return history
 
+    def remember(self, observation, action, reward, next_observation, done):
+        raise NotImplementedError()
+
     def act(self, observation, is_train=False):
         """Given the env observation, return the action to be taken."""
         raise NotImplementedError()
@@ -221,14 +225,11 @@ class Processor(object):
     the two without having to change the underlaying implementation of the
     agent or environment.
     """
-    def process_step(self, observation, reward, done, info):
-        observation = self.process_observation(observation)
-        reward = self.process_reward(reward)
-        info = self.process_info(info)
-        return observation, reward, done, info
-
     def process_observation(self, observation):
         return observation
+
+    def process_action(self, action):
+        return action
 
     def process_reward(self, reward):
         return reward

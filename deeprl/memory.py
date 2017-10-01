@@ -1,3 +1,4 @@
+import numpy as np
 import random
 
 from collections import namedtuple
@@ -56,7 +57,7 @@ class Memory(object):
 
         if batch_size > len(self):
             # sample with replacement
-            batch_idxs = np.random.random_integers(0, len(self), size=batch_size)
+            batch_idxs = np.random.randint(0, len(self), size=batch_size)
         else:
             # sample without replacement
             batch_idxs = random.sample(xrange(len(self)), batch_size)
