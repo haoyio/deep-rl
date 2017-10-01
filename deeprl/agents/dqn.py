@@ -16,7 +16,7 @@ class DQNAgent(Agent):
                  epsilon_decay=0.99,
                  discount=0.99,
                  minibatch_size=32,
-                 replay_start_size=50000,
+                 min_experiences=50000,
                  **kwargs):
 
         super(DQNAgent, self).__init__(**kwargs)
@@ -31,7 +31,7 @@ class DQNAgent(Agent):
 
         self.discount = discount  # discount factor
         self.minibatch_size = minibatch_size  # minibatch size
-        self.replay_start_size = replay_start_size
+        self.min_experiences = min_experiences
 
     def act(self, observation, is_train=False):
         """Returns an action based on epsilon-greedy selection.
@@ -53,7 +53,7 @@ class DQNAgent(Agent):
         Replays samples in the agent's memory to train the model and returns
         training history for model after replay.
         """
-        if len(self.memory) < self.replay_start_size:
+        if len(self.memory) < self.min_experiences:
             return None
 
         observations = []

@@ -18,11 +18,11 @@ class Agent(object):
     def train(self,
               env,
               n_episodes,
-              verbose=1,
+              min_experiences=0,
+              n_simulations=0,
               action_repetition=1,
               max_episode_steps=float('inf'),
-              n_simulations=0,
-              min_experiences=0):
+              verbose=1):
 
         start_time = timeit.default_timer()
         is_aborted = False
@@ -45,6 +45,9 @@ class Agent(object):
         try:
             # initialize with minimum number of experiences
             if min_experiences > 0:
+                if verbose:
+                    print("Starting agent initialization...")
+                
                 experience = 0
 
                 while experience < min_experiences:
@@ -61,7 +64,7 @@ class Agent(object):
                     episode_step = 0
 
                     while not done and episode_step < max_episode_steps:
-                        observation = deepcopy(observation)
+                        initial_observation = deepcopy(observation)
                         episode_step_reward = 0.0
 
                         # select action
@@ -105,8 +108,16 @@ class Agent(object):
 
                         # housekeeping for experience gained
                         experience += 1
+                        
+                if verbose:
+                    print("Completed agent initialization in {} sec.".format(
+                        timeit.default_timer() - start_time
+                    ))
 
             # begin training proper
+            if verbose:
+                print("Starting agent training...")
+            
             while episode < n_episodes:
                 # initialize environment
                 observation = deepcopy(env.reset())
@@ -249,14 +260,14 @@ class Agent(object):
 
         except KeyboardInterrupt:
             # catch keyboard interrupts to safely abort training
-            self.logger.warning("Agent training has been manually aborted.")
+            self.logger.warning("Aborted agent training manually.")
             is_aborted = True
 
         history['total_time_sec'] = timeit.default_timer() - start_time
         history['is_aborted'] = is_aborted
 
         if verbose:
-            print("Agent training completed in {} sec{}.".format(
+            print("Completed agent training in {} sec{}.".format(
                 history.get('total_time_sec'),
                 " (aborted)" if is_aborted else ""
             ))
