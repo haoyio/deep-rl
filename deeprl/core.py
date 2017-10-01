@@ -21,7 +21,8 @@ class Agent(object):
               verbose=1,
               action_repetition=1,
               max_episode_steps=float('inf'),
-              n_simulations=0):
+              n_simulations=0,
+              min_experiences=0):
 
         start_time = timeit.default_timer()
         is_aborted = False
@@ -42,6 +43,70 @@ class Agent(object):
         episode_step = None
 
         try:
+            # initialize with minimum number of experiences
+            if min_experiences > 0:
+                experience = 0
+
+                while experience < min_experiences:
+                    # initialize environment
+                    observation = deepcopy(env.reset())
+                    if self.processor is not None:
+                        observation = \
+                            self.processor.process_observation(
+                                observation
+                            )
+                    assert observation is not None
+
+                    done = False
+                    episode_step = 0
+
+                    while not done and episode_step < max_episode_steps:
+                        observation = deepcopy(observation)
+                        episode_step_reward = 0.0
+
+                        # select action
+                        action = self.act(
+                            observation,
+                            is_train=False
+                        )
+                        if self.processor is not None:
+                            action = self.processor.process_action(
+                                action
+                            )
+
+                        # execute action
+                        for _ in xrange(action_repetition):
+                            observation, reward, done, _ = \
+                                env.step(action)
+                            observation = deepcopy(observation)
+
+                            if self.processor is not None:
+                                observation = \
+                                    self.processor.process_observation(
+                                        observation
+                                    )
+                                reward = self.processor.process_reward(
+                                    reward
+                                )
+
+                            episode_step_reward += reward
+
+                            if done:
+                                break
+
+                        # store experience
+                        self.remember(
+                            initial_observation,
+                            action,
+                            episode_step_reward,
+                            observation,
+                            done
+                        )
+
+                        # housekeeping for experience gained
+                        experience += 1
+
+            # begin training proper
             while episode < n_episodes:
                 # initialize environment
                 observation = deepcopy(env.reset())
@@ -172,7 +237,8 @@ class Agent(object):
                 episode_reward = None
                 episode_step = None
 
-                if verbose:
+                # print only every |verbose| episodes
+                if verbose and episode % verbose == 0:
                     print("episode={}/{}: episode_reward={}{}".format(
                         episode,
                         n_episodes,

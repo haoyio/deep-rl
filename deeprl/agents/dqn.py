@@ -10,12 +10,12 @@ class DQNAgent(Agent):
 
     def __init__(self,
                  model,
-                 memory_limit=100000,
+                 memory_limit=1000000,
                  epsilon=1.0,
                  epsilon_min=0.1,
                  epsilon_decay=0.99,
                  discount=0.99,
-                 batch_size=32,
+                 minibatch_size=32,
                  replay_start_size=50000,
                  **kwargs):
 
@@ -30,7 +30,7 @@ class DQNAgent(Agent):
         )
 
         self.discount = discount  # discount factor
-        self.batch_size = batch_size  # minibatch size
+        self.minibatch_size = minibatch_size  # minibatch size
         self.replay_start_size = replay_start_size
 
     def act(self, observation, is_train=False):
@@ -59,18 +59,18 @@ class DQNAgent(Agent):
         observations = []
         targets = []
 
-        minibatch = self.memory.sample(self.update_batch_size)
+        minibatch = self.memory.sample(self.minibatch_size)
 
-        for exp in minibatch:
-            target = exp.reward
-            if not exp.done:
-                target = exp.reward + self.discount * \
-                         np.amax(self.model.predict(exp.next_observation)[0])
+        for observation, action, reward, next_observation, done in minibatch:
+            target = reward
+            if not done:
+                target = reward + self.discount * \
+                         np.amax(self.model.predict(next_observation)[0])
 
-            target_f = self.model.predict(exp.observation)[0]
-            target_f[exp.action] = target
+            target_f = self.model.predict(observation)[0]
+            target_f[action] = target
 
-            observations.append(exp.observation[0])
+            observations.append(observation[0])
             targets.append(target_f)
 
         history = self.model.fit(

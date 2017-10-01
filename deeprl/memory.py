@@ -4,18 +4,12 @@ import random
 from collections import namedtuple
 
 
-Experience = namedtuple(
-    'Experience',
-    'observation, action, reward, next_observation, done'
-)
-
-
 class RingBuffer(object):
     def __init__(self, maxlen):
         self.maxlen = maxlen
         self.start = 0
         self.length = 0
-        self.data = [None for _ in xrange(maxlen)]
+        self.data = []
 
     def __len__(self):
         return self.length
@@ -27,12 +21,13 @@ class RingBuffer(object):
 
     def append(self, v):
         if self.length < self.maxlen:
+            self.data.append(v)
             self.length += 1
         elif self.length == self.maxlen:
+            self.data[(self.start + self.length - 1) % self.maxlen] = v
             self.start = (self.start + 1) % self.maxlen
         else:
             raise RuntimeError()
-        self.data[(self.start + self.length - 1) % self.maxlen] = v
 
 
 class Memory(object):
@@ -47,19 +42,9 @@ class Memory(object):
         self.experiences = RingBuffer(self.limit)
 
     def remember(self, observation, action, reward, next_observation, done):
-        self.experiences.append(
-            Experience(observation, action, reward, next_observation, done)
-        )
+        self.experiences.append((observation, action, reward, next_observation, done))
 
     def sample(self, batch_size):
         if len(self) == 0:
             raise ValueError("Memory is empty")
-
-        if batch_size > len(self):
-            # sample with replacement
-            batch_idxs = np.random.randint(0, len(self), size=batch_size)
-        else:
-            # sample without replacement
-            batch_idxs = random.sample(xrange(len(self)), batch_size)
-
-        return [self.experiences[i] for i in batch_idxs]
+        return random.sample(self.experiences.data, batch_size)
