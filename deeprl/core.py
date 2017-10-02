@@ -47,7 +47,7 @@ class Agent(object):
             if min_experiences > 0:
                 if verbose:
                     print("Starting agent initialization...")
-                
+
                 experience = 0
 
                 while experience < min_experiences:
@@ -108,16 +108,16 @@ class Agent(object):
 
                         # housekeeping for experience gained
                         experience += 1
-                        
+
                 if verbose:
                     print("Completed agent initialization in {} sec.".format(
-                        timeit.default_timer() - start_time
+                        round(timeit.default_timer() - start_time, 2)
                     ))
 
             # begin training proper
             if verbose:
                 print("Starting agent training...")
-            
+
             while episode < n_episodes:
                 # initialize environment
                 observation = deepcopy(env.reset())
@@ -268,11 +268,91 @@ class Agent(object):
 
         if verbose:
             print("Completed agent training in {} sec{}.".format(
-                history.get('total_time_sec'),
+                round(history.get('total_time_sec'), 2),
                 " (aborted)" if is_aborted else ""
             ))
 
         return history
+
+    def test(self,
+             n_simulations,
+             action_repetition=1,
+             max_episode_steps=float('inf'),
+             verbose=1):
+
+        if verbose:
+            print("Starting agent simulation for {} episodes...".format(
+                    n_simulations
+            ))
+
+        start_time = timeit.default_timer()
+
+        simulation = 0
+        simulation_rewards = 0.0
+
+        while simulation < n_simulations:
+            # initialize environment
+            sim_observation = deepcopy(env.reset())
+            if self.processor is not None:
+                sim_observation = \
+                    self.processor.process_observation(
+                        sim_observation
+                    )
+            assert sim_observation is not None
+
+            sim_done = False
+            sim_episode_reward = 0.0
+            sim_episode_step = 0
+
+            while not sim_done and \
+                  sim_episode_step < max_episode_steps:
+                sim_observation = deepcopy(sim_observation)
+                sim_episode_step_reward = 0.0
+
+                # select action
+                sim_action = self.act(
+                    sim_observation,
+                    is_train=False
+                )
+                if self.processor is not None:
+                    sim_action = self.processor.process_action(
+                        sim_action
+                    )
+
+                # execute action
+                for _ in xrange(action_repetition):
+                    sim_observation, sim_reward, sim_done, _ = \
+                        env.step(sim_action)
+                    sim_observation = deepcopy(sim_observation)
+
+                    if self.processor is not None:
+                        sim_observation = \
+                            self.processor.process_observation(
+                                sim_observation
+                            )
+                        sim_reward = self.processor.process_reward(
+                            sim_reward
+                        )
+
+                    sim_episode_step_reward += sim_reward
+
+                    if sim_done:
+                        break
+
+                # housekeeping for each simulation step
+                sim_episode_reward += sim_episode_step_reward
+                sim_episode_step += 1
+
+            # housekeeping for each simulation
+            simulation_rewards += sim_episode_reward
+            simulation += 1
+
+        if verbose:
+            print("Completed agent simulation in {} sec.".format(
+                round(timeit.default_timer() - start_time, 2)
+            ))
+
+        return simulation_rewards / simulation
 
     def remember(self, observation, action, reward, next_observation, done):
         raise NotImplementedError()
